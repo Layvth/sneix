@@ -10,17 +10,13 @@ user=$(who | cut -d ' ' -f1 | sort | uniq)
 interface=$(ip link show | awk -F': ' '/^[0-9]+: [a-zA-Z0-9]+:/ {name=$2} END {print name}')
 
 function banner () {
-    echo "
-     
-       __ ___ __  ___ __ _______            __         
-     |   Y   |__.'  _|__|   _   .----.--.--|  |_.-----.
-     |.  |   |  |   _|  |.  1   |   _|  |  |   _|  -__|
-     |. / \  |__|__| |__|.  _   |__| |_____|____|_____|
-     |:      |          |:  1    \                     
-     |::.|:. |          |::.. .  /                     
-     |--- ---'          |--------
-     Layvth@Github/
-   "
+    echo "                            
+       _ ___ _ _____         _       
+ _ _ _|_|  _|_| __  |___ _ _| |_ ___ 
+| | | | |  _| | __ -|  _| | |  _| -_|
+|_____|_|_| |_|_____|_| |___|_| |___|                              
+Layvth@Github/
+"
 }
 check_monitor_mode_support() {
     # Check if the phy80211 directory exists for the interface
