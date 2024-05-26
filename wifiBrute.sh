@@ -26,17 +26,34 @@ Layvth@Github
 "
 }
 #////////////////////////////// airodump-ng running for get access AP //////////////
+
+
 run_airodump() {
     local interface=$1
     echo -e "${GREEN}[+]~: ${NC}Scanning for Wi-Fi networks on interface $interface..."
     echo -e "${YELLOW}[+]~: When you Finish Scaning Press [Ctrl + c]"
-    xterm -geometry 100x50 -e "airodump-ng $interface"
+    xterm -geometry 100x50 -e "airodump-ng $interface --output-format csv -w outputfile"
+    filter_info outputfile-01.csv 
 }
 
-
-
-
-
+filter_info() {
+    rm final_result.txt
+    local input_file=$1
+    local output_file="ap_info.csv"
+    # Filtering important columns: BSSID, ESSID, Channel, Encryption
+    awk -F ',' 'BEGIN {OFS=","} {if ($1 != "") print $1, $4, $14, $6, $7}' "$input_file" > "$output_file"
+    echo -e "${GREEN}[+]~: ${NC}Filtered information saved in $output_file"
+    cat ap_info.csv | awk -F ',' '/,,,/{p++} p==1 && NF>1' | sed '1,2d; s/,,,,//g' | sort -u >> final_result.txt
+    rm ap_info.csv
+    rm outputfile-01.csv
+}
+# # filter_info() {
+#     local input_file=$1
+#     local output_file="ap_info.csv"
+#     # Filtering lines containing "BSSID, channel, ESSID, Privacy, Cipher" and printing desired columns
+#     awk -F ', ' '/BSSID, channel, ESSID, Privacy, Cipher/ {print $1, $2, $3, $4, $5}' "$input_file" > "$output_file"
+#     echo -e "${GREEN}[+]~: ${NC}Filtered information saved in $output_file"
+# }
 
 sendDeauth () {
   local bssid=$1
@@ -48,7 +65,8 @@ sendDeauth () {
 check_monitor_mode_support() {
     # Check if the phy80211 directory exists for the interface
     if [ -d "/sys/class/net/$interface/phy80211" ]; then
-        echo -e "${GREEN}[*]~: ${NC}Interface ($interface) supports monitor mode !"
+        echo -e "${GREEN}[*]~: ${NC}Interface ($interface) supports monitor mode !"o
+        sleep 1
         mode=$(iwconfig $interface | grep "Mode:" | awk '{print $4}')
         if [ "$mode" = "Mode:Monitor" ]; then
             echo -e "${GREEN}[+]~:${NC} You on ready in Monitro Mode !"
@@ -109,7 +127,7 @@ checkRoot () {
     fi
 } 
 checkTools () {
-    echo -e "${GREEN}[+]~:${NC} Tools checking :"
+    echo -e "${GREEN}[+]~:${NC} Tools checking~:"
     air=$(which aircrack-ng)
     if ! [ "$?" -eq "0" ]; then
       echo -e "     Aircrack-ng     ${RED}[Not Found] ${NC}"
