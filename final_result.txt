@@ -1,2 +1,0 @@
-14:4D:67:51:7C:CC,  5, Atic coffee, WPA2, CCMP TKIP
-B6:F6:81:7B:73:90,  1, Redmi Note 12 Pro, WPA2, CCMP
