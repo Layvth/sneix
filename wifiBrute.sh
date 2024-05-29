@@ -1,5 +1,6 @@
-#!/bin/bash
+
 # 
+resize -s 34 105 > /dev/null
 #
 # colors
 BLUE='\033[0;34m'
@@ -49,13 +50,6 @@ filter_info() {
     rm outputfile-01.csv
     choseTargetAp final_result.txt
 }
-# # filter_info() {
-#     local input_file=$1
-#     local output_file="ap_info.csv"
-#     # Filtering lines containing "BSSID, channel, ESSID, Privacy, Cipher" and printing desired columns
-#     awk -F ', ' '/BSSID, channel, ESSID, Privacy, Cipher/ {print $1, $2, $3, $4, $5}' "$input_file" > "$output_file"
-#     echo -e "${GREEN}[+]~: ${NC}Filtered information saved in $output_file"
-# }
 
 sendDeauth () {
   local bssid=$1
@@ -90,24 +84,48 @@ choseTargetAp () {
         }' "$input_file"
     total_lines=$(wc -l < "$input_file")
     while true; do
-        if [ "$ragetAp" == "1" ]; then
-            break        
+      if [ "$total_lines" -eq "0" ]; then
+        echo -e "${RED}[!] ${NC}No networks found. try to run script Again"
+        break
+      elif [ "$total_lines" -eq "1" ]; then
+        echo "Choosing the default one."
+        break
+      else
+        read -p "Set target Network Number: " targetAp
+        if [ "$targetAp" -le "$total_lines" ] && [ "$targetAp" -gt "0" ]; then >> /dev/null
+            startAttacking "$targetAp" "$input_file"
+            break
         else
-            read -p "> Enter the Target Ap :" targetAp 2> /dev/null
-            if [ "$targetAp" -gt 0 ] && [ "$targetAp" -le "$total_lines" ]; then
-                echo "Congratulation"
-                break
-            else 
-                echo "Error"
-            fi
+          echo "Error"
         fi
+      fi
     done
+}
+startAttacking () {
+    local lineNum=$1
+    local fileAps=$2
+    local filtered=$(sed -n "${lineNum}p" "$fileAps")
+    
+    local targetAp=$(echo "$filtered" | awk '{print $3}')
+    local targetBSSID=$(echo "$filtered" | awk '{print $1}')
+    local targetChannel=$(echo "$filtered" | awk '{print $2}')
+
+    echo "$targetAp"
+    
+
 
 }
+
+
+
+
+
+
 
 check_monitor_mode_support() {
     # Check if the phy80211 directory exists for the interface
     if [ -d "/sys/class/net/$interface/phy80211" ]; then
+        sleep 0.4
         echo -e "${GREEN}[*]~: ${NC}Interface ($interface) supports monitor mode !"o
         sleep 1
         mode=$(iwconfig $interface | grep "Mode:" | awk '{print $4}')
@@ -115,7 +133,7 @@ check_monitor_mode_support() {
             echo -e "${GREEN}[+]~:${NC} You on ready in Monitro Mode !"
             checkTools
         else
-            read -p "${GREEN}[+] ${NC}Switch ($interface) to monitor mode (y/n) >  " response
+            read -p "    | Switch ($interface) to monitor mode (y/n) >  " response
             if [ "$response" == "yes" ] || [ "$response" == "y" ]; then
                 sleep .7
                 airmon-ng start $interface >> /dev/null
@@ -178,11 +196,11 @@ checkTools() {
     for tool in "${tools[@]}"; do
         tool_path=$(which "$tool")
         if [ "$?" -ne "0" ]; then
-            echo -e "$tool  :${RED}[Not Found] ${NC}"
+            echo -e "${RED}[ Not Found ] ${NC}$toos"
             echo "[!] try [ apt-get install $tool ] "
         else 
             sleep 0.4
-            echo -e "${BLUE}[+] ${NC}$tool ${GREEN}[Found]${NC}"
+            echo -e "${GREEN}[ Found ]~: ${NC}$tool"
             ((tools_found+=1)) # Increment the counter if the tool is found
         fi
     done
