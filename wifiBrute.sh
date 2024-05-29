@@ -27,7 +27,7 @@ function banner () {
 Layvth@Github
 "
 }
-#////////////////////////////// airodump-ng running for get access AP //////////////
+#/////////////////////////////// airodump-ng running for get access AP //////////////
 
 
 run_airodump() {
