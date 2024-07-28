@@ -1,0 +1,3 @@
+14:4D:67:51:7C:CC,  8, Atic coffee, WPA2, CCMP TKIP
+38:72:C0:16:EA:A3,  1, globalnet, WPA, TKIP
+A6:B4:4E:60:13:3E, 11, HELLO SIR !, WPA2, CCMP

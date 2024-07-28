@@ -20,14 +20,14 @@ user=$(who | cut -d ' ' -f1 | sort | uniq)
 interface=$(ip link show | awk -F': ' '/^[0-9]+: [a-zA-Z0-9]+:/ {name=$2} END {print name}')
 
 banner () {
-    echo "                                  
+    echo -e "                                  
                                _                                   
          _    _____  ___  ____/ /____ __
         | |/|/ / _ \/ _ \/ __/  '_/\ \ /
         |__,__/_//_/\___/\__/_/\_\/_\_\                         
 
      ╭──────────────────────────────────────────────────────────────╮
-     | In brute force attacks, we manually initiate various stagesi | 
+     | In brute force attacks, we manually initiate various strategy| 
      | of the cracking process. This can be time-consuming and      | 
      | error-prone. However, with the help of our scripting, we can | 
      | automate these steps, significantly improving speed          | 
@@ -84,21 +84,21 @@ choseTargetAp() {
             col6_width = 12  # Encryption
             
             # Print top border with rounded corners
-            printf "╭───────┬────────────────────┬──────────┬──────────────────────┬──────────────┬──────────────╮\n"
+            printf "      ╭───────┬────────────────────┬──────────┬──────────────────────┬──────────────┬──────────────╮\n"
             # Print header
-            printf "│ %-*s │ %-*s │ %-*s │ %-*s │ %-*s │ %-*s │\n", col1_width, "Line", col2_width, "MAC Address", col3_width, "Channel", col4_width, "ESSID", col5_width, "Security", col6_width, "Encryption"
+            printf "      │ %-*s │ %-*s │ %-*s │ %-*s │ %-*s │ %-*s │\n", col1_width, "Line", col2_width, "MAC Address", col3_width, "Channel", col4_width, "ESSID", col5_width, "Security", col6_width, "Encryption"
             # Print divider
-            printf "├───────┼────────────────────┼──────────┼──────────────────────┼──────────────┼──────────────┤\n"
+            printf "      ├───────┼────────────────────┼──────────┼──────────────────────┼──────────────┼──────────────┤\n"
             line=0
         }
         {
             line++
             # Print each field with proper formatting
-            printf "│ %-*d │ %-*s │ %-*s │ %-*s │ %-*s │ %-*s │\n", col1_width, line, col2_width, $1, col3_width, $2, col4_width, $3, col5_width, $4, col6_width, $5
+            printf "      │ %-*d │ %-*s │ %-*s │ %-*s │ %-*s │ %-*s │\n", col1_width, line, col2_width, $1, col3_width, $2, col4_width, $3, col5_width, $4, col6_width, $5
         }
         END {
             # Print bottom border with rounded corners
-            printf "╰───────┴────────────────────┴──────────┴──────────────────────┴──────────────┴──────────────╯\n"
+            printf "      ╰───────┴────────────────────┴──────────┴──────────────────────┴──────────────┴──────────────╯\n"
         }' "$input_file"
 
     total_lines=$(wc -l < "$input_file")
@@ -111,12 +111,12 @@ choseTargetAp() {
             startAttacking "1" "$input_file"
             break
         else
-            read -p "> Set target Network Number: " targetAp
+            read -p "       #: Set target Network Number: " targetAp
             if [ "$targetAp" -le "$total_lines" ] 2>/dev/null && [ "$targetAp" -gt "0" ]; then
                 startAttacking "$targetAp" "$input_file"
                 break
             else
-                echo -e "${YELLOW}[?] ${NC}Please select a valid number from the table."
+                echo -e "       ${YELLOW}[?] ${NC}Please select a valid number from the table."
             fi
         fi
     done
@@ -130,18 +130,24 @@ startAttacking () {
     local targetBSSID=$(echo "$filtered" | awk '{print $1}' | sed 's/,//g')
     local targetChannel=$(echo "$filtered" | awk '{print $2}' | sed 's/,//g')
     local interface=
-    echo -e "Your Target Network ${YELLOW}$targetAp ${NC}"
-    read -p "[ Press Enter to continue ]"
-    echo -e "${GREEN}"
-    read -p "[*] Do you Have Handshake File [y/n] : " hand_shake
-    echo -e "${NC}"
+    echo  
+    
+
+
+    echo -e "
+    ╔══════════════════════════════════════════╗
+    ║        Your Target Network ${YELLOW}$targetAp${NC}          ║
+    ╚══════════════════════════════════════════╝"
+    read -p "       [ Press Enter to continue ]"
+    read -p "       [*] Do you Have Handshake File [y/n] : " hand_shake
     if [ "$hand_shake" == "yes" ] || [ "$hand_shake" == "y" ]; then
+        echo -e "${YELLOW}     [!]${NC} if you don't have handshake file enter : ${YELLOW} ext ${NC}" 
         while true; do
             read -p "[*] Path >: " handshake_file
             if [ -f "$path" ]; then
                 break
             else
-                echo "File does not exist."
+                echo -e "File does not exist."
             fi
         done 
     else
@@ -232,7 +238,6 @@ ctrl_c () {
         banner
         read -p "       [*] Do you want to exit from Monitor mode (yes/no) : " check
         if [ "$check" == "yes" ] 2>/dev/null || [ "$check" == "y" ]; then
-            echo $interface
             echo "       [*] Exiting from monitor Mode !"
             exit 1
         else
