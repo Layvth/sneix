@@ -18,23 +18,26 @@ homepath=$(echo ~)
 user=$(who | cut -d ' ' -f1 | sort | uniq)
 interface=$(ip link show | awk -F': ' '/^[0-9]+: [a-zA-Z0-9]+:/ {name=$2} END {print name}')
 
-function banner () {
+banner () {
     echo "                                  
-                      _
-          ____ _  ___(_)_ __
-         (_-< ' \/ -_) \ \ /
-         /__/_||_\___|_/_\_\
-         by: github/Layvth           
-    "
+      __ __ ___ _  ___  ____ __
+      \ V  V / ' \/ _ \/ _| / /
+       \_/\_/|_||_\___/\__|_\_#
+
+     ╭──────────────────────────────────────────────────────────────╮
+     | In brute force attacks, we manually initiate various stagesi | 
+     | of the cracking process. This can be time-consuming and      | 
+     | error-prone. However, with the help of our scripting, we can | 
+     | automate these steps, significantly improving speed          | 
+     ╰──────────────────────────────────────────────────────────────╯
+                                                @girhub/Layvth v 1.0
+                                                "
 }
-#/////////////////////////////// airodump-ng running for get target AP //////////////
-
-
 run_airodump() {
     local interface=$1
-    echo -e "${GREEN}[+]~: ${NC}Scanning for Wi-Fi networks on interface $interface..."
-    echo -e "${RED}[ ATTENTION }${NC} ${YELLOW}MAKE SHOUR WHEN YOU PRESS Ctrl + C YOU ARE IN XTERM TERMINAL NOT THE MAIN ONE ${NC}"
-    echo -e "${YELLOW}[+]~: When you Finish Scaning Press [Ctrl + c]"
+    echo -e "${GREEN}       [+]~: ${NC}Scanning for Wi-Fi networks on interface $interface..."
+    echo -e "${RED}         [ ATTENTION }${NC} ${YELLOW}MAKE SHOUR WHEN YOU PRESS Ctrl + C YOU ARE IN XTERM TERMINAL NOT THE MAIN ONE ${NC}"
+    echo -e "${YELLOW}i         [+]~: When you Finish Scaning Press [Ctrl + c]"
     xterm -geometry 100x50 -e "airodump-ng $interface --output-format csv -w outputfile"
     filter_info outputfile-01.csv
     exit 0
@@ -185,14 +188,14 @@ check_monitor_mode_support() {
     # Check if the phy80211 directory exists for the interface
     if [ -d "/sys/class/net/$interface/phy80211" ]; then
         sleep 0.4
-        echo -e "${GREEN}[*]~: ${NC}Interface ($interface) supports monitor mode !"
+        echo -e "${GREEN}       [*]  ${NC}Interface ($interface) supports monitor mode !"
         sleep 1
         mode=$(iwconfig $interface | grep "Mode:" | awk '{print $4}')
         if [ "$mode" = "Mode:Monitor" ]; then
-            echo -e "           ${GREEN}[+]~:${NC} You on ready in Monitro Mode !"
+            echo -e"           ${GREEN}[+]~:${NC} You on ready in Monitro Mode !"
             checkTools
         else
-            read -p "[*]~: Switch ($interface) to monitor mode (y/n) :   " input 
+            read -p "       [*] Switch ($interface) to monitor mode (y/n) :   " input 
             if [ "$input" == "yes" ] || [ "$input" == "y" ]; then
                 sleep .3
                 airmon-ng start $interface >> /dev/null
@@ -206,31 +209,32 @@ check_monitor_mode_support() {
         fi
         
     else
-        echo -e "${RED}[!]${NC} Interface ($interface) does not support monitor mode"
+        echo -e "${RED}     [!]${NC} Interface ($interface) does not support monitor mode"
         sleep .3
-        echo -e "${RED}[!]${NC} Error check your interface !${NC}"
+        echo -e "${RED}     [!]${NC} Error check your interface !${NC}"
+        read -p "" 
         exit 1
     fi
 }
 
 ctrl_c () {
-    echo "_________________|EXITING_______________"
-    echo "            HAVE GOOD DAY SIR           "
-    if iwconfig $interface | grep -q "Mode:Monitor"; then
-        read -p "[*]~: Do you want to exit from Monitor mode (yes/no) : " check
+
+    if iwconfig $interface 2>/dev/null | grep -q "Mode:Monitor" ; then
+        read -p "       [*]~: Do you want to exit from Monitor mode (yes/no) : " check
         if [ "$check" == "yes" ] 2>/dev/null || [ "$check" == "y" ]; then
             echo $interface
-            ifconfig $infterface down >>/dev/null
-            iwconfig $infterface mode managed >>/dev/null
-            ifconfig $infterface up >>/dev/null
-            echo "[*]~: Exiting from monitor Mode !"
+            echo "      [*]~: Exiting from monitor Mode !"
             exit 1
         else
-            echo -e "${YELLOW}[*]~: ${NC}Exit !"
+            echo -e "${YELLOW}      [*]~: ${NC}Exit !"
             exit 1
         fi
     else
-        echo -e "\n${YELLOW}[*]~: ${NC}Exit !"
+        #echo -e "${YELLOW}     [*]~: ${NC}Exit !"
+        clear
+        echo 
+        banner
+        echo "      GOOD BYE SIR  "
         exit 1
     fi
 }
@@ -252,7 +256,7 @@ checkRoot () {
 
 checkTools() {
     echo -e "${GREEN}[+]~:${NC} Tools checking~:"
-    tools=("aircrack-ng" "airodump-ng" "aireplay-ng" "xterm")
+    tools={"aircrack-ng" "airodump-ng" "aireplay-ng" "xterm"}
     tools_found=0
     for tool in "${tools[@]}"; do
         tool_path=$(which "$tool")
