@@ -1,4 +1,5 @@
-# Wnockx - Automated Aircrack-ng Tool for WPA Brute Force
+# Wnockx
+Automated Aircrack-ng Tool for WPA Brute Force
 
 ## Description
 Wnockx is a bash script designed to automate the process of cracking WPA/WPA2 Wi-Fi passwords using Aircrack-ng suite tools. It simplifies the workflow by scanning Wi-Fi networks, filtering essential information, initiating deauthentication attacks, capturing handshakes, and performing brute-force attacks using specified wordlists.
