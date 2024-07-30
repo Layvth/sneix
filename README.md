@@ -20,7 +20,7 @@ The script utilizes bash scripting and tools like Aircrack-ng, Airodump-ng, Aire
 ## Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/username/repository.git
+   git clone https://github.com/Layvth/wnockx
 
 ## Usage
 1. Ensure your network interface supports monitor mode and required tools are installed.
