@@ -46,7 +46,7 @@ run_airodump() {
 }
 
 filter_info() {
-    rm final_result.txt
+    rm final_result.txt 2>/dev/null
     local input_file=$1
     local output_file="ap_info.csv"
     # Filtering important columns: BSSID, ESSID, Channel, Encryption
@@ -130,29 +130,23 @@ startAttacking () {
     local targetBSSID=$(echo "$filtered" | awk '{print $1}' | sed 's/,//g')
     local targetChannel=$(echo "$filtered" | awk '{print $2}' | sed 's/,//g')
     local interface=
-    echo  
-    
-
-
-    echo -e "
-    
-            Your Target Network ${YELLOW}$targetAp${NC}"
+    echo -e "Your Target Network ${YELLOW}$targetAp${NC}"
     read -p "       [ Press Enter to continue ]"
     read -p "       [*] Do you Have Handshake File [y/n] : " hand_shake
     if [ "$hand_shake" == "yes" ] || [ "$hand_shake" == "y" ]; then
-        echo -e "${YELLOW}     [!]${NC} if you don't have handshake file enter : ${YELLOW} ext ${NC}" 
+        echo -e "${YELLOW}      [!]${NC} if you don't have handshake file enter : ${YELLOW} ext ${NC}" 
         while true; do
-            read -p "[*] Path >: " handshake_file
+            read -p "      [*] Path >: " handshake_file
             if [ -f "$path" ]; then
                 break
             else
-                echo -e "File does not exist."
+                echo -e "      File does not exist."
             fi
         done 
     else
         echo -e "${YELLOW}"
-        echo -e "Start Get handshake File"
-        read -p "[ Press Enter ]"
+        echo -e "      Start Get handshake File"
+        read -p "      [ Press Enter ]"
         getHandshake "$targetBSSID" "$targetChannel"
         echo -e "${NC}"
 
